@@ -88,7 +88,7 @@ class MyDataLoader(DataLoader):
 if __name__ == "__main__":
     @dataclass
     class Config:
-        dataset_name = "RTE"
+        dataset_name = "MRPC"
         batch_size = 4
         max_length = 256
         model_name_or_path = "../pretrained_models/roberta"
@@ -97,8 +97,9 @@ if __name__ == "__main__":
     config = Config()
     
     # test for read data
-    config.dataset_name = "MRPC"
+    config.dataset_name = "CoLA"
     train, dev, test = read_data(config)
+    breakpoint()
     
     # test for MyDataset
     train, dev, test = read_data(config)
