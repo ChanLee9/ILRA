@@ -3,6 +3,8 @@ TASK_TYPE=NLU
 BATCH_SIZE=4
 LR=2e-5
 MAX_LEN=512
+METHOD=bit_fit
+LORA_R=2
 
 python main.py \
     --dataset_name $DARASET_NAME \
@@ -13,4 +15,11 @@ python main.py \
     --num_epochs 3 \
     --task_type $TASK_TYPE \
     --device cuda:0 \
-    --num_tags 2
+    --num_tags 2 \
+    --modules_to_apply $METHOD \
+    --lora_r $LORA_R \
+    --lora_alpha 8 \
+    --method $METHOD \
+    --dropout 0.1 \
+
+

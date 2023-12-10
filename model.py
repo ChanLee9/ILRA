@@ -5,13 +5,13 @@ import torch.functional as F
 from transformers import RobertaModel, AutoTokenizer
 
 class NLU_Model(nn.Module):
-    def __init__(self, config) -> None:
+    def __init__(self, base_model, config) -> None:
         super().__init__()
-        self.tokenizer = AutoTokenizer.from_pretrained(config.model_name_or_path)
-        self.base_model = RobertaModel.from_pretrained(config.model_name_or_path)
+        self.base_model = base_model
         self.fc = nn.Linear(self.base_model.pooler.dense.weight.shape[1], config.num_tags)
         self.device = config.device
         self.max_length = config.max_length
+        self.tokenizer = AutoTokenizer.from_pretrained(config.model_name_or_path)
     
     def loss_fn(self, item):
         criterion = nn.CrossEntropyLoss()

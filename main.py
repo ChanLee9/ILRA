@@ -20,6 +20,13 @@ def get_args():
     parser.add_argument("--device", default=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"), type=str, help="device")
     parser.add_argument("--lr", default=1e-5, type=float, help="learning rate")
     parser.add_argument("--num_epochs", default=3, type=int, help="epochs")
+    parser.add_argument("--modules_to_apply", type=str, help="modules to apply")
+    parser.add_argument("--method", type=str, help="method")
+    parser.add_argument("--dropout", default=0.1, type=float, help="dropout ratio")
+    
+    # lora
+    parser.add_argument("--lora_r", default=2, type=int, help="lora r")
+    parser.add_argument("--lora_alpha", default=8, type=float, help="lora alpha")
     
     # evaluation
     
@@ -37,7 +44,9 @@ if __name__ == '__main__':
     test_dataloader = MyDataLoader(test_dataset, config, shuffle=False)
     dev_dataloader = MyDataLoader(dev_dataset, config, shuffle=False)
     
-    model = get_model(config)
+    model = get_customed_model(config)
+    print_trainable_params(model)
+    # print(model)
     optimizer, lr_scheduler = get_optimizer(model, train_dataloader, config)
     
     for epoch in range(config.num_epochs):
