@@ -1,7 +1,5 @@
 import pandas as pd
 import os
-
-from sklearn.model_selection import train_test_split
   
 def read_data(data_dir, dataset_name):
     train_path = os.path.join(data_dir, "train.tsv")
