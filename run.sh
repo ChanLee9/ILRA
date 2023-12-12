@@ -3,7 +3,7 @@ TASK_TYPE=NLU
 BATCH_SIZE=4
 LR=2e-5
 MAX_LEN=512
-METHOD=bit_fit
+METHOD=krona
 LORA_R=2
 
 python main.py \
@@ -21,5 +21,8 @@ python main.py \
     --lora_alpha 8 \
     --method $METHOD \
     --dropout 0.1 \
+    --krona_dim 4 \
+    --krona_alpha 8 \
+    --krona_dropout 0.1 \
 
 
