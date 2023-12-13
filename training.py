@@ -169,7 +169,7 @@ if __name__ == "__main__":
     test_dataloader = MyDataLoader(test_dataset, config, shuffle=False)
     dev_dataloader = MyDataLoader(dev_dataset, config, shuffle=False)
     
-    model = get_model(config)
+    model = get_customed_model(config)
     optimizer, lr_scheduler = get_optimizer(model, train_dataloader, config)
     
     for epoch in range(config.epochs):
