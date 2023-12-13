@@ -28,6 +28,11 @@ def get_args():
     parser.add_argument("--lora_r", default=2, type=int, help="lora r")
     parser.add_argument("--lora_alpha", default=8, type=float, help="lora alpha")
     
+    # krona
+    parser.add_argument("--krona_dim", default=2, type=int, help="lora r")
+    parser.add_argument("--krona_alpha", default=8, type=float, help="lora alpha")
+    parser.add_argument("--krona_dropout", default=0.1, type=float, help="dropout ratio")
+    
     # evaluation
     
     return parser.parse_args()

@@ -13,6 +13,7 @@ from sklearn.metrics import classification_report
 
 from preprocess import *
 from model import *
+from methods import *
 
 WEIGHT_DECAY = 1e-2
 
@@ -83,50 +84,6 @@ def print_trainable_params(model):
     print(f'total parameters: {total_params} || trainable parameters: {trainable_params} || trainable ratio: {100*trainable_ratio:.2f}%'
         )
 
-def apply_lora(base_model, config):
-    if config.task_type == "NLU":
-        num_layers = len(base_model.encoder.layer)
-        for ly in range(num_layers):
-            # query
-            query_dim = base_model.encoder.layer[ly].attention.self.query.weight.shape
-            base_model.encoder.layer[ly].attention.self.query = lora.Linear(
-                in_features=query_dim[0],
-                out_features=query_dim[1],
-                r=config.lora_r,
-                lora_alpha=config.lora_alpha,
-                lora_dropout=config.dropout
-            )
-            # value
-            value_dim = base_model.encoder.layer[ly].attention.self.value.weight.shape
-            base_model.encoder.layer[ly].attention.self.value = lora.Linear(
-                in_features=value_dim[0],
-                out_features=value_dim[1],
-                r=config.lora_r,
-                lora_alpha=config.lora_alpha,
-                lora_dropout=config.dropout
-            )
-    
-    # mark only lora module as trainable
-    lora.mark_only_lora_as_trainable(base_model)
-  
-def apply_bit_fit(base_model, config):
-    # freeze all parameters except bias
-    if config.task_type == "NLU":
-        # freeze all parameters
-        for _, p in base_model.named_parameters():
-            p.requires_grad = False
-        
-        # unfreeze bias
-        num_layers = len(base_model.encoder.layer)
-        for ly in range(num_layers):
-            base_model.encoder.layer[ly].attention.self.query.bias.requires_grad = True
-            base_model.encoder.layer[ly].attention.self.value.bias.requires_grad = True
-            base_model.encoder.layer[ly].attention.self.key.bias.requires_grad = True
-            base_model.encoder.layer[ly].attention.output.dense.bias.requires_grad = True
-            base_model.encoder.layer[ly].intermediate.dense.bias.requires_grad = True
-            base_model.encoder.layer[ly].output.dense.bias.requires_grad = True
-        base_model.pooler.dense.bias.requires_grad = True
-
 def get_base_model(config):
     if config.task_type == "NLU":
         base_model = RobertaModel.from_pretrained(config.model_name_or_path)
@@ -140,8 +97,12 @@ def get_customed_model(config):
             pass
         elif config.method == "lora":
             apply_lora(base_model, config)
+        elif config.method == "PA":
+            apply_pa(base_model, config)
         elif config.method == "bit_fit":
             apply_bit_fit(base_model, config)
+        elif config.method == "KronA":
+            apply_KronA(base_model, config)
         model = NLU_Model(base_model, config).to(config.device)
     return model
 
