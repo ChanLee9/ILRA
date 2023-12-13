@@ -7,7 +7,7 @@ from tqdm import tqdm
 import torch.nn as nn
 from dataclasses import dataclass
 from transformers import get_scheduler
-from transformers import RobertaModel, AutoTokenizer
+from customed_transformers import RobertaModel, RobertaConfig
 
 from sklearn.metrics import classification_report
 
@@ -15,18 +15,30 @@ from preprocess import *
 from model import *
 from methods import *
 
-WEIGHT_DECAY = 1e-2
-
 def get_optimizer(model, dataloader, config):
-    optimizer = torch.optim.AdamW(filter(lambda p:p.requires_grad, model.parameters()), lr=config.lr, weight_decay=WEIGHT_DECAY)
+    
+    # Optimizer
+    # Split weights in two groups, one with weight decay and the other not.
+    no_decay = ["bias", "LayerNorm.weight"]
+    optimizer_grouped_parameters = [
+        {
+            "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
+            "weight_decay": config.weight_decay,
+        },
+        {
+            "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
+            "weight_decay": 0.0,
+        },
+    ]
+    optimizer = torch.optim.AdamW(optimizer_grouped_parameters, lr=config.lr)
     lr_scheduler = get_scheduler(
         'linear',
         optimizer,
-        num_warmup_steps=200,
+        num_warmup_steps=300,
         num_training_steps=config.num_epochs*len(dataloader)
     )
     return optimizer, lr_scheduler
-    
+
 def train_loop(dataloader, model, optimizer, lr_scheduler, epoch):     # 一轮训练
     total_loss = 0.
     progress_bar = tqdm(range(len(dataloader)))
@@ -35,12 +47,10 @@ def train_loop(dataloader, model, optimizer, lr_scheduler, epoch):     # 一轮�
     model.train()  
     for batch, item in enumerate(dataloader):
         loss = model.loss_fn(item)
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         lr_scheduler.step()
-        
-        optimizer.zero_grad()
-        
         total_loss += loss.item()
         progress_bar.set_description(f'epoch: {epoch+1}, loss: {total_loss/(batch+1)}')
         progress_bar.update(1)
@@ -58,7 +68,7 @@ def dev_loop(dataloader, model):
             y_pred.extend(model(item)[1].cpu().numpy())
             progress_bar.update(1)
         print(f'dev result: \n {classification_report(y_true, y_pred)}')
-    return y_pred
+    return y_pred, y_true
 
 
 def test_loop(dataloader, model):
@@ -92,17 +102,21 @@ def get_base_model(config):
 
 def get_customed_model(config):
     if config.task_type == "NLU":
-        base_model = RobertaModel.from_pretrained(config.model_name_or_path)
-        if config.method == "full-finetuning":
+        roberta_config = RobertaConfig.from_pretrained(config.model_name_or_path)
+        # add customed config to roberta_config before load roberta base model
+        roberta_config.update(config.__dict__)
+        base_model = RobertaModel.from_pretrained(config.model_name_or_path, config=roberta_config)
+        base_model.config.method = config.method
+        if config.method == "fft":
             pass
         elif config.method == "lora":
-            apply_lora(base_model, config)
-        elif config.method == "PA":
+            lora.mark_only_lora_as_trainable(base_model)
+        elif config.method == "pa":
             apply_pa(base_model, config)
         elif config.method == "bit_fit":
             apply_bit_fit(base_model, config)
-        elif config.method == "KronA":
-            apply_KronA(base_model, config)
+        elif config.method == "krona":
+            krona.mark_only_krona_as_trainable(base_model)
         model = NLU_Model(base_model, config).to(config.device)
     return model
 
@@ -131,6 +145,7 @@ if __name__ == "__main__":
     dev_dataloader = MyDataLoader(dev_dataset, config, shuffle=False)
     
     model = get_customed_model(config)
+    
     optimizer, lr_scheduler = get_optimizer(model, train_dataloader, config)
     
     for epoch in range(config.epochs):

@@ -1,10 +1,8 @@
 import os
 import pandas as pd
 
-import torch
 from dataclasses import dataclass
 from torch.utils.data import Dataset, DataLoader
-from transformers import AutoTokenizer
   
 def read_data(config: object) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
     """

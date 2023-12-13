@@ -1,5 +1,4 @@
 import loralib as lora
-
 import modified_modules.krona_layer as krona
 
 def apply_lora(base_model, config):
@@ -38,8 +37,8 @@ def apply_krona(base_model, config):
                 in_features=query_dim[0],
                 out_features=query_dim[1],
                 krona_dim=config.krona_dim,
-                krona_dim_alpha=config.krona_dim_alpha,
-                krona_dim_dropout=config.krona_dim_dropout
+                krona_alpha=config.krona_alpha,
+                krona_dropout=config.krona_dropout
             )
             # value
             value_dim = base_model.encoder.layer[ly].attention.self.value.weight.shape
@@ -47,8 +46,8 @@ def apply_krona(base_model, config):
                 in_features=value_dim[0],
                 out_features=value_dim[1],
                 krona_dim=config.krona_dim,
-                krona_dim_alpha=config.krona_dim_alpha,
-                krona_dim_dropout=config.krona_dim_dropout
+                krona_alpha=config.krona_alpha,
+                krona_dropout=config.krona_dropout
             )
     # mark only krona module as trainable
     krona.mark_only_krona_as_trainable(base_model)
@@ -94,18 +93,20 @@ def apply_pa(base_model, config):
         )
         # ffn1
         ffn1_dim = base_model.encoder.layer[ly].intermediate.dense.weight.shape
+        # (3072, 768)
         base_model.encoder.layer[ly].intermediate.dense = lora.Linear(
-            in_features=ffn1_dim[0],
-            out_features=ffn1_dim[1],
+            in_features=ffn1_dim[1],
+            out_features=ffn1_dim[0],
             r=config.lora_r,
             lora_alpha=config.lora_alpha,
             lora_dropout=config.dropout
         )
         # ffn2
         ffn2_dim = base_model.encoder.layer[ly].output.dense.weight.shape
+        # (768, 3072)
         base_model.encoder.layer[ly].output.dense = lora.Linear(
-            in_features=ffn2_dim[0],
-            out_features=ffn2_dim[1],
+            in_features=ffn2_dim[1],
+            out_features=ffn2_dim[0],
             r=config.lora_r,
             lora_alpha=config.lora_alpha,
             lora_dropout=config.dropout
@@ -132,7 +133,3 @@ def apply_bit_fit(base_model, config):
             base_model.encoder.layer[ly].intermediate.dense.bias.requires_grad = True
             base_model.encoder.layer[ly].output.dense.bias.requires_grad = True
         base_model.pooler.dense.bias.requires_grad = True
-
-
-def apply_KronA(base_model, config):
-    pass

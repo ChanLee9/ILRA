@@ -1,7 +1,3 @@
-def func():
-    a = 2
-    if a > 1:
-        pass
-    print(2)
+from customed_transformers import RobertaModel, AutoTokenizer, RobertaConfig
 
-func()
+config = RobertaConfig.f

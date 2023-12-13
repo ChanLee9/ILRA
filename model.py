@@ -2,7 +2,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import torch.functional as F
-from transformers import RobertaModel, AutoTokenizer
+from customed_transformers import RobertaModel, AutoTokenizer
 
 class NLU_Model(nn.Module):
     def __init__(self, base_model, config) -> None:

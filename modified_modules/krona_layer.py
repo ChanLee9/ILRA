@@ -72,35 +72,38 @@ class Linear(nn.Linear, KronALayer):
             if self.merge_weights and self.merged:
                 # Make sure that the weights are not merged
                 if self.krona_dim > 0:
-                    self.weight.data -= self.compute_krona_product()
+                    self.weight.data -= self.compute_krona_matrix()
                 self.merged = False
         else:
             if self.merge_weights and not self.merged:
                 # Merge the weights and mark it
                 if self.krona_dim > 0:
-                    self.weight.data += self.compute_krona_product()
+                    self.weight.data += self.compute_krona_matrix()
                 self.merged = True       
 
     def forward(self, x: torch.Tensor):
         def T(w):
             return w.transpose(0, 1) if self.fan_in_fan_out else w
         if self.krona_dim > 0 and not self.merged:
-            result = F.linear(x, T(self.weight), bias=self.bias)  
-            # # add residual Connection
-            # result += x
-            result += self.compute_krona_product()
+            result = F.linear(x, T(self.weight), bias=self.bias)*self.scaling
+            krona_product_matrix = self.compute_krona_matrix()
+            print(krona_product_matrix)
+            result += self.krona_dropout(x)@krona_product_matrix
+            # add residual Connection
+            # return result + X
             return result
         else:
             return F.linear(x, T(self.weight), bias=self.bias)
     
-    def compute_krona_product(self):
-        def T(w):
-            return w.transpose(0, 1) if self.fan_in_fan_out else w
-        # compute kroneker product
+    def compute_krona_product(self, x):
+        krona_res = self.krona_A.transpose(0, 1)@self.krona_dropout(x.view(x.size(0), x.size(1), self.krona_dim, -1))@self.krona_B
+        return krona_res.view(x.size(0), x.size(1), -1)
+    
+    def compute_krona_matrix(self):
+        # compute kroneker matrix
         krona_product = torch.einsum('ij,kl->ikjl', self.krona_A, self.krona_B)   
         krona_product = krona_product.view(self.krona_A.size(0) * self.krona_B.size(0), self.krona_A.size(1) * self.krona_B.size(1)) 
-        krona_product = self.krona_dropout(krona_product) * self.scaling
-        return T(krona_product)
+        return krona_product*self.scaling
 
 def mark_only_krona_as_trainable(model: nn.Module, bias: str = 'none') -> None:
     for n, p in model.named_parameters():

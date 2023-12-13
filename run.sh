@@ -1,10 +1,12 @@
 DARASET_NAME=MRPC
 TASK_TYPE=NLU
-BATCH_SIZE=4
-LR=2e-5
+BATCH_SIZE=32
+LR=1e-3
 MAX_LEN=512
 METHOD=krona
 LORA_R=2
+KRONA_DIM=4
+SCALING_ALPHA=5
 
 python main.py \
     --dataset_name $DARASET_NAME \
@@ -12,17 +14,15 @@ python main.py \
     --batch_size $BATCH_SIZE \
     --max_length $MAX_LEN \
     --lr $LR \
-    --num_epochs 3 \
+    --num_epochs 5 \
     --task_type $TASK_TYPE \
     --device cuda:0 \
     --num_tags 2 \
-    --modules_to_apply $METHOD \
     --lora_r $LORA_R \
-    --lora_alpha 8 \
     --method $METHOD \
+    --krona_dim $KRONA_DIM \
+    --scaling_alpha $SCALING_ALPHA \
     --dropout 0.1 \
-    --krona_dim 4 \
-    --krona_alpha 8 \
-    --krona_dropout 0.1 \
+    --weight_decay 1e-2 \
 
 
