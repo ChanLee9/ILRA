@@ -85,9 +85,9 @@ class Linear(nn.Linear, KronALayer):
         def T(w):
             return w.transpose(0, 1) if self.fan_in_fan_out else w
         if self.krona_dim > 0 and not self.merged:
-            result = F.linear(x, T(self.weight), bias=self.bias)*self.scaling
-            krona_product_matrix = self.compute_krona_matrix()
-            print(krona_product_matrix)
+            result = F.linear(x, T(self.weight), bias=self.bias)
+            krona_product_matrix = self.compute_krona_matrix()*self.scaling
+            # print(krona_product_matrix)
             result += self.krona_dropout(x)@krona_product_matrix
             # add residual Connection
             # return result + X

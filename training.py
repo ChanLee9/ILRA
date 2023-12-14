@@ -34,7 +34,7 @@ def get_optimizer(model, dataloader, config):
     lr_scheduler = get_scheduler(
         'linear',
         optimizer,
-        num_warmup_steps=300,
+        num_warmup_steps=config.warmup_steps,
         num_training_steps=config.num_epochs*len(dataloader)
     )
     return optimizer, lr_scheduler
@@ -52,7 +52,7 @@ def train_loop(dataloader, model, optimizer, lr_scheduler, epoch):     # 一轮�
         optimizer.step()
         lr_scheduler.step()
         total_loss += loss.item()
-        progress_bar.set_description(f'epoch: {epoch+1}, loss: {total_loss/(batch+1)}')
+        progress_bar.set_description(f'epoch: {epoch+1}, loss: {loss.item()}')
         progress_bar.update(1)
     return total_loss
 
@@ -99,6 +99,9 @@ def get_base_model(config):
         base_model = RobertaModel.from_pretrained(config.model_name_or_path)
     return base_model
 
+def freeze_model(model):
+    for n, p in model.named_parameters():
+        p.requires_grad = False
 
 def get_customed_model(config):
     if config.task_type == "NLU":
@@ -117,6 +120,7 @@ def get_customed_model(config):
             apply_bit_fit(base_model, config)
         elif config.method == "krona":
             krona.mark_only_krona_as_trainable(base_model)
+        # freeze_model(base_model)
         model = NLU_Model(base_model, config).to(config.device)
     return model
 
