@@ -115,9 +115,14 @@ def get_customed_model(config):
         elif config.method == "lora":
             lora.mark_only_lora_as_trainable(base_model)
         elif config.method == "pa":
-            apply_pa(base_model, config)
+            lora.mark_only_lora_as_trainable(base_model)
         elif config.method == "bit_fit":
-            apply_bit_fit(base_model, config)
+            # freeze all parameters except bias (LayerNorm.bias excluded)
+            for n, p in base_model.named_parameters():
+                if "bias" not in n:
+                    p.requires_grad = False
+                elif "LayerNorm.bias" in n:
+                    p.requires_grad = False
         elif config.method == "krona":
             krona.mark_only_krona_as_trainable(base_model)
         # freeze_model(base_model)
