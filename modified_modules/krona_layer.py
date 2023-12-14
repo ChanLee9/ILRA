@@ -72,13 +72,15 @@ class Linear(nn.Linear, KronALayer):
             if self.merge_weights and self.merged:
                 # Make sure that the weights are not merged
                 if self.krona_dim > 0:
-                    self.weight.data -= self.compute_krona_matrix()
+                    mx = self.compute_krona_matrix()
+                    self.weight.data -= mx.transpose(0, 1)
                 self.merged = False
         else:
             if self.merge_weights and not self.merged:
                 # Merge the weights and mark it
                 if self.krona_dim > 0:
-                    self.weight.data += self.compute_krona_matrix()
+                    mx = self.compute_krona_matrix()
+                    self.weight.data += mx.transpose(0, 1)
                 self.merged = True       
 
     def forward(self, x: torch.Tensor):
@@ -86,8 +88,8 @@ class Linear(nn.Linear, KronALayer):
             return w.transpose(0, 1) if self.fan_in_fan_out else w
         if self.krona_dim > 0 and not self.merged:
             result = F.linear(x, T(self.weight), bias=self.bias)
-            krona_product_matrix = self.compute_krona_matrix()*self.scaling
-            # print(krona_product_matrix)
+            mx = self.compute_krona_matrix()
+            krona_product_matrix = mx*self.scaling
             result += self.krona_dropout(x)@krona_product_matrix
             # add residual Connection
             # return result + X

@@ -6,9 +6,9 @@ MAX_LEN=512
 METHOD=krona
 LORA_R=2
 KRONA_DIM=32
-SCALING_ALPHA=16
+SCALING_ALPHA=32
 NUM_EPOCHS=20
-MODULES_TO_APPLY="query,key,value,output,ffn1,ffn2"
+MODULES_TO_APPLY="query,value"
 
 python main.py \
     --dataset_name $DARASET_NAME \
