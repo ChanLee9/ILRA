@@ -3,12 +3,61 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import math
-from transformers import RobertaModel
 from typing import Optional, List
 
-def get_ilra_modules(config):
-    model = RobertaModel.from_pretrained(config.model_name_or_path)
+from dataclasses import dataclass
+from transformers import RobertaModel
+from sklearn.decomposition import PCA
+
+
+class IlraDim():
+    def __init__(self, config) -> None:
+        self.config = config
+        self.model = RobertaModel.from_pretrained(config.model_name_or_path)
+        self.ilra_dims = self.get_ilra_dims()
     
+    def get_ilra_dims(self):
+        """
+        ilra_dims: {layer_idx: {module: dim}}
+        """
+        ilra_dims = {}  
+        for i in range(config.num_hidden_layers):
+            ilra_dims[i] = {module: 0 for module in config.modules_to_apply}
+        for ly in range(self.config.num_hidden_layers):
+            for module in self.config.modules_to_apply:
+                dim = self.get_single_dim(ly, module)
+                ilra_dims[ly][module] = dim
+        return ilra_dims
+
+    def get_single_dim(self, ly, module):
+        # get the turning dim of current matrix
+        pca = PCA(n_components=50)
+        if module == "query":
+            mx = self.model.encoder.layer[ly].attention.self.query.weight.detach().cpu().numpy()
+        elif module == "key":
+            mx = self.model.encoder.layer[ly].attention.self.key.weight.detach().cpu().numpy()
+        elif module == "value":
+            mx = self.model.encoder.layer[ly].attention.self.value.weight.detach().cpu().numpy()
+        elif module == "output":
+            mx = self.model.encoder.layer[ly].attention.output.dense.weight.detach().cpu().numpy()
+        elif module == "ffn1":
+            mx = self.model.encoder.layer[ly].intermediate.dense.weight.detach().cpu().numpy()
+        elif module == "ffn2":
+            mx = self.model.encoder.layer[ly].output.dense.weight.detach().cpu().numpy()
+        else:
+            raise NotImplementedError
+        pca.fit(mx)
+        variance_ratio = pca.explained_variance_ratio_ 
+        variance_ratio_diff = variance_ratio[1:] - variance_ratio[:-1]
+        # get the first index where the difference is going down
+        for i in range(1, len(variance_ratio_diff)):
+            diff = variance_ratio_diff[i+1] - variance_ratio_diff[i]    
+            if diff < 0:
+                return i+1
+        return len(variance_ratio_diff)
+# def get_ilra_dims(config):
+#     model = RobertaModel.from_pretrained(config.model_name_or_path)
+#     ilra_dims = 
 
 class KronALayer():
     def __init__(
@@ -138,3 +187,22 @@ def check_krona_dim(self, krona_dim, in_features, out_features):
         krona_dim = krona_dim_left
     elif min_dim % krona_dim_right == 0:
         krona_dim = krona_dim_right
+
+if __name__ == "__main__":
+    @dataclass
+    class Config:
+        dataset_name = "MRPC"
+        batch_size = 4
+        max_length = 512
+        model_name_or_path = "../pretrained_models/roberta"
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        lr = 1e-5
+        epochs = 3
+        num_tags = 2
+        task_type = "NLU"
+        num_hidden_layers = 12
+        modules_to_apply = "query,value,key,output,ffn1,ffn2"
+    config = Config()
+    config.modules_to_apply = config.modules_to_apply.split(',')
+    ilra_dim = IlraDim(config)
+    print(ilra_dim.ilra_dims)
