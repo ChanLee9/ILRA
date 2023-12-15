@@ -14,9 +14,9 @@ class IlraDim():
     def __init__(self, config) -> None:
         self.config = config
         self.model = RobertaModel.from_pretrained(config.model_name_or_path)
-        self.ilra_dims = self.get_ilra_dims()
+        self.ilra_dims = self.get_ilra_dims(config)
     
-    def get_ilra_dims(self):
+    def get_ilra_dims(self, config):
         """
         ilra_dims: {layer_idx: {module: dim}}
         """
@@ -26,7 +26,8 @@ class IlraDim():
         for ly in range(self.config.num_hidden_layers):
             for module in self.config.modules_to_apply:
                 dim = self.get_single_dim(ly, module)
-                ilra_dims[ly][module] = dim
+                divisible_dim = self.check_ilra_dim(dim, self.config.hidden_size, self.config.intermediate_size)
+                ilra_dims[ly][module] = divisible_dim
         return ilra_dims
 
     def get_single_dim(self, ly, module):
@@ -55,9 +56,20 @@ class IlraDim():
             if diff < 0:
                 return i+1
         return len(variance_ratio_diff)
-# def get_ilra_dims(config):
-#     model = RobertaModel.from_pretrained(config.model_name_or_path)
-#     ilra_dims = 
+
+    def check_ilra_dim(self, ilra_dim, in_features, out_features):
+        # make sure that krona_dim is divisible by both in_features and out_features
+        min_dim = min(in_features, out_features)
+        ilra_dim_left, ilra_dim_right = ilra_dim, ilra_dim
+        while min_dim % ilra_dim_left and min_dim % ilra_dim_right:
+            ilra_dim_left -= 1
+            ilra_dim_right += 1
+        if min_dim % ilra_dim_left == 0:
+            ilra_dim = ilra_dim_left
+        elif min_dim % ilra_dim_right == 0:
+            ilra_dim = ilra_dim_right
+        return ilra_dim
+
 
 class KronALayer():
     def __init__(
@@ -158,7 +170,7 @@ class Linear(nn.Linear, KronALayer):
 
 def mark_only_ilra_as_trainable(model: nn.Module, bias: str = 'none') -> None:
     for n, p in model.named_parameters():
-        if 'ilra_' not in n:
+        if 'krona_' not in n:
             p.requires_grad = False
     if bias == 'none':
         return
@@ -166,7 +178,7 @@ def mark_only_ilra_as_trainable(model: nn.Module, bias: str = 'none') -> None:
         for n, p in model.named_parameters():
             if 'bias' in n:
                 p.requires_grad = True
-    elif bias == 'ilra_only':
+    elif bias == 'krona_only':
         for m in model.modules():
             if isinstance(m, KronALayer) and \
                 hasattr(m, 'bias') and \
@@ -175,18 +187,6 @@ def mark_only_ilra_as_trainable(model: nn.Module, bias: str = 'none') -> None:
     else:
         raise NotImplementedError
 
-
-def check_krona_dim(self, krona_dim, in_features, out_features):
-    # make sure that krona_dim is divisible by both in_features and out_features
-    min_dim = min(in_features, out_features)
-    krona_dim_left, krona_dim_right = krona_dim, krona_dim
-    while min_dim % krona_dim_left and min_dim % krona_dim_right:
-        krona_dim_left -= 1
-        krona_dim_right += 1
-    if min_dim % krona_dim_left == 0:
-        krona_dim = krona_dim_left
-    elif min_dim % krona_dim_right == 0:
-        krona_dim = krona_dim_right
 
 if __name__ == "__main__":
     @dataclass
@@ -201,6 +201,8 @@ if __name__ == "__main__":
         num_tags = 2
         task_type = "NLU"
         num_hidden_layers = 12
+        hidden_size = 768
+        intermediate_size = 3072
         modules_to_apply = "query,value,key,output,ffn1,ffn2"
     config = Config()
     config.modules_to_apply = config.modules_to_apply.split(',')

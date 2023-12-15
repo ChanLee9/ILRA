@@ -88,9 +88,15 @@ def print_trainable_params(model):
         model (_type_): _description_
 
     """
+    print_trainable_layers = False
     total_params = sum([p.numel() for p in model.parameters()])
     trainable_params = sum([p.numel() for p in model.parameters() if p.requires_grad])
     trainable_ratio = trainable_params / total_params
+    
+    if print_trainable_layers:
+        for n, p in model.named_parameters():
+            if p.requires_grad:
+                print(n, p.shape)
     print(f'total parameters: {total_params} || trainable parameters: {trainable_params} || trainable ratio: {100*trainable_ratio:.2f}%'
         )
 
@@ -123,7 +129,7 @@ def get_customed_model(config):
                     p.requires_grad = False
                 elif "LayerNorm.bias" in n:
                     p.requires_grad = False
-        elif config.method == "krona":
+        elif config.method == "krona" or config.method == "ilra":
             krona.mark_only_krona_as_trainable(base_model)
         # freeze_model(base_model)
         model = NLU_Model(base_model, config).to(config.device)

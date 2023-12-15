@@ -158,7 +158,7 @@ class RobertaEmbeddings(nn.Module):
 
 # Copied from transformers.models.bert.modeling_bert.BertSelfAttention with Bert->Roberta
 class RobertaSelfAttention(nn.Module):
-    def __init__(self, config, position_embedding_type=None):
+    def __init__(self, config, position_embedding_type=None, ilra_dims=None):
         super().__init__()
         if config.hidden_size % config.num_attention_heads != 0 and not hasattr(config, "embedding_size"):
             raise ValueError(
@@ -169,7 +169,7 @@ class RobertaSelfAttention(nn.Module):
         self.num_attention_heads = config.num_attention_heads
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
         self.all_head_size = self.num_attention_heads * self.attention_head_size
- 
+        
         if config.method == "lora":
             if "query" in config.modules_to_apply:
                 self.query = lora.Linear(
@@ -233,6 +233,31 @@ class RobertaSelfAttention(nn.Module):
                 )
             else:
                 self.key = nn.Linear(config.hidden_size, self.all_head_size)
+        elif config.method == "ilra":
+            if "query" in ilra_dims:
+                self.query = krona.Linear(
+                    in_features=config.hidden_size,
+                    out_features=self.all_head_size,
+                    krona_dim=ilra_dims["query"],
+                    krona_alpha=config.scaling_alpha,
+                    krona_dropout=config.dropout
+                )
+            if "key" in ilra_dims:
+                self.key = krona.Linear(
+                    in_features=config.hidden_size,
+                    out_features=self.all_head_size,
+                    krona_dim=ilra_dims["key"],
+                    krona_alpha=config.scaling_alpha,
+                    krona_dropout=config.dropout
+                )
+            if "value" in ilra_dims:
+                self.value = krona.Linear(
+                    in_features=config.hidden_size,
+                    out_features=self.all_head_size,
+                    krona_dim=ilra_dims["value"],
+                    krona_alpha=config.scaling_alpha,
+                    krona_dropout=config.dropout
+                )
         else:
             self.query = nn.Linear(config.hidden_size, self.all_head_size)
             self.key = nn.Linear(config.hidden_size, self.all_head_size)
@@ -357,7 +382,7 @@ class RobertaSelfAttention(nn.Module):
 
 # Copied from transformers.models.bert.modeling_bert.BertSelfOutput
 class RobertaSelfOutput(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, ilra_dims=None):
         super().__init__()
         if config.method == "lora":
             self.dense = lora.Linear(
@@ -368,12 +393,20 @@ class RobertaSelfOutput(nn.Module):
                 lora_dropout=config.dropout
             )
         elif config.method == "krona":
-            self.dense = lora.Linear(
+            self.dense = krona.Linear(
                 in_features=config.hidden_size,
                 out_features=config.hidden_size,
-                r=config.lora_r,
-                lora_alpha=config.scaling_alpha,
-                lora_dropout=config.dropout
+                krona_dim=config.krona_dim,
+                krona_alpha=config.scaling_alpha,
+                krona_dropout=config.dropout
+            )
+        elif config.method == "ilra" and "output" in ilra_dims:
+            self.dense = krona.Linear(
+                in_features=config.hidden_size,
+                out_features=config.hidden_size,
+                krona_dim=ilra_dims["output"],
+                krona_alpha=config.scaling_alpha,
+                krona_dropout=config.dropout
             )
         else:
             self.dense = nn.Linear(config.hidden_size, config.hidden_size)
@@ -389,10 +422,10 @@ class RobertaSelfOutput(nn.Module):
 
 # Copied from transformers.models.bert.modeling_bert.BertAttention with Bert->Roberta
 class RobertaAttention(nn.Module):
-    def __init__(self, config, position_embedding_type=None):
+    def __init__(self, config, position_embedding_type=None, ilra_dims=None):
         super().__init__()
-        self.self = RobertaSelfAttention(config, position_embedding_type=position_embedding_type)
-        self.output = RobertaSelfOutput(config)
+        self.self = RobertaSelfAttention(config, position_embedding_type=position_embedding_type, ilra_dims=ilra_dims)
+        self.output = RobertaSelfOutput(config, ilra_dims=ilra_dims)
         self.pruned_heads = set()
 
     def prune_heads(self, heads):
@@ -439,7 +472,7 @@ class RobertaAttention(nn.Module):
 
 # Copied from transformers.models.bert.modeling_bert.BertIntermediate
 class RobertaIntermediate(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, ilra_dims=None):
         super().__init__()
         if config.method == "lora":
             self.dense = lora.Linear(
@@ -466,6 +499,15 @@ class RobertaIntermediate(nn.Module):
                 lora_alpha=config.scaling_alpha,
                 lora_dropout=config.dropout
             )
+        elif config.method == "ilra" and "ffn1" in ilra_dims:
+            self.dense = krona.Linear(
+                in_features=config.hidden_size,
+                out_features=config.intermediate_size,
+                krona_dim=ilra_dims["ffn1"],
+                krona_alpha=config.scaling_alpha,
+                krona_dropout=config.dropout
+            )
+            
         else:
             self.dense = nn.Linear(config.hidden_size, config.intermediate_size)
         if isinstance(config.hidden_act, str):
@@ -481,7 +523,7 @@ class RobertaIntermediate(nn.Module):
 
 # Copied from transformers.models.bert.modeling_bert.BertOutput
 class RobertaOutput(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, ilra_dims=None):
         super().__init__()
         if config.method == "lora":
             self.dense = lora.Linear(
@@ -508,6 +550,14 @@ class RobertaOutput(nn.Module):
                 lora_alpha=config.scaling_alpha,
                 lora_dropout=config.dropout
             )
+        elif config.method == "ilra" and "ffn2" in ilra_dims:
+            self.dense = krona.Linear(
+                in_features=config.intermediate_size,
+                out_features=config.hidden_size,
+                krona_dim=ilra_dims["ffn2"],
+                krona_alpha=config.scaling_alpha,
+                krona_dropout=config.dropout
+            )
         else:
             self.dense = nn.Linear(config.intermediate_size, config.hidden_size)
         self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
@@ -522,19 +572,19 @@ class RobertaOutput(nn.Module):
 
 # Copied from transformers.models.bert.modeling_bert.BertLayer with Bert->Roberta
 class RobertaLayer(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, ilra_dims=None):
         super().__init__()
         self.chunk_size_feed_forward = config.chunk_size_feed_forward
         self.seq_len_dim = 1
-        self.attention = RobertaAttention(config)
+        self.attention = RobertaAttention(config, ilra_dims=ilra_dims)
         self.is_decoder = config.is_decoder
         self.add_cross_attention = config.add_cross_attention
         if self.add_cross_attention:
             if not self.is_decoder:
                 raise ValueError(f"{self} should be used as a decoder model if cross attention is added")
             self.crossattention = RobertaAttention(config, position_embedding_type="absolute")
-        self.intermediate = RobertaIntermediate(config)
-        self.output = RobertaOutput(config)
+        self.intermediate = RobertaIntermediate(config, ilra_dims=ilra_dims)
+        self.output = RobertaOutput(config, ilra_dims=ilra_dims)
 
     def forward(
         self,
@@ -605,14 +655,21 @@ class RobertaLayer(nn.Module):
         intermediate_output = self.intermediate(attention_output)
         layer_output = self.output(intermediate_output, attention_output)
         return layer_output
-
+    
 
 # Copied from transformers.models.bert.modeling_bert.BertEncoder with Bert->Roberta
 class RobertaEncoder(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        self.layer = nn.ModuleList([RobertaLayer(config) for _ in range(config.num_hidden_layers)])
+        if config.method == "ilra":
+            self.ilra_dims = ilra.IlraDim(config).ilra_dims
+            self.layer = nn.ModuleList([])
+            for idx in range(self.config.num_hidden_layers):
+                cur_ilra_dims = self.ilra_dims[idx]
+                self.layer.append(RobertaLayer(config, ilra_dims=cur_ilra_dims))
+        else:
+            self.layer = nn.ModuleList([RobertaLayer(config) for _ in range(config.num_hidden_layers)])
         self.gradient_checkpointing = False
 
     def forward(
@@ -704,7 +761,6 @@ class RobertaEncoder(nn.Module):
             attentions=all_self_attentions,
             cross_attentions=all_cross_attentions,
         )
-
 
 # Copied from transformers.models.bert.modeling_bert.BertPooler
 class RobertaPooler(nn.Module):

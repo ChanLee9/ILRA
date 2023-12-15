@@ -56,6 +56,7 @@ if __name__ == '__main__':
     dev_dataloader = MyDataLoader(dev_dataset, config, shuffle=False)
     
     model = get_customed_model(config)
+    print(model.base_model.encoder.ilra_dims)
     print_trainable_params(model)
     # print(model)
     optimizer, lr_scheduler = get_optimizer(model, train_dataloader, config)
