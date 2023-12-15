@@ -1,7 +1,7 @@
-datasets/*
-.ipynb_checkpoints/*
-__pycache__/*
-modified_modules/__pycache__/*
-custom_modules/__pycache__/*
-custom_modules/*/__pycache__/*
-custom_modules/*/*/__pycache__/*
+datasets
+.ipynb_checkpoints/
+__pycache__/
+*/__pycache__
+*/*/__pycache__
+*/*/*/__pycache__
+
