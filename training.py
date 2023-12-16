@@ -52,7 +52,7 @@ def train_loop(dataloader, model, optimizer, lr_scheduler, epoch):     # 一轮�
         optimizer.step()
         lr_scheduler.step()
         total_loss += loss.item()
-        progress_bar.set_description(f'epoch: {epoch+1}, loss: {loss.item()}')
+        progress_bar.set_description(f'epoch: {epoch+1}, loss: {total_loss/(batch+1):>4f}')
         progress_bar.update(1)
     return total_loss
 
@@ -78,7 +78,7 @@ def test_loop(dataloader, model):
     y_pred = []
     with torch.no_grad():
         for batch, item in enumerate(dataloader):
-            y_pred = model(item).cpu().numpy()
+            y_pred.extend(model(item)[1].cpu().numpy())
         return y_pred
 
 def print_trainable_params(model):

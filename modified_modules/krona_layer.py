@@ -13,9 +13,11 @@ class KronALayer():
         krona_alpha: int, 
         krona_dropout: float,
         merge_weights: bool,
+        config,
     ):
         self.krona_dim = krona_dim
         self.krona_alpha = krona_alpha
+        self.config = config
         
         # Optional dropout
         if krona_dropout > 0.:
@@ -34,6 +36,7 @@ class Linear(nn.Linear, KronALayer):
         self, 
         in_features: int, 
         out_features: int, 
+        config,
         krona_dim: int = 0, 
         krona_alpha: int = 1, 
         krona_dropout: float = 0.,
@@ -43,7 +46,7 @@ class Linear(nn.Linear, KronALayer):
     ):
         nn.Linear.__init__(self, in_features, out_features, **kwargs)
         KronALayer.__init__(self, krona_dim=krona_dim, krona_alpha=krona_alpha, krona_dropout=krona_dropout,
-                           merge_weights=merge_weights)
+                           merge_weights=merge_weights, config=config)
 
         self.fan_in_fan_out = fan_in_fan_out
         
@@ -52,6 +55,7 @@ class Linear(nn.Linear, KronALayer):
             self.krona_A = nn.Parameter(self.weight.new_zeros((krona_dim, out_features//krona_dim)))
             self.krona_B = nn.Parameter(self.weight.new_zeros((in_features//krona_dim, krona_dim)))
             self.scaling = self.krona_alpha / self.krona_dim
+            # self.scaling = 1.0
             
             # Freezing the pre-trained weight matrix
             self.weight.requires_grad = False
@@ -88,11 +92,12 @@ class Linear(nn.Linear, KronALayer):
             return w.transpose(0, 1) if self.fan_in_fan_out else w
         if self.krona_dim > 0 and not self.merged:
             result = F.linear(x, T(self.weight), bias=self.bias)
-            mx = self.compute_krona_matrix()
-            krona_product_matrix = mx*self.scaling
-            result += self.krona_dropout(x)@krona_product_matrix
-            # add residual Connection
-            # return result + X
+            mx = self.compute_krona_matrix() * self.scaling
+            if self.config.residual_connection:
+                result += x@mx
+                # result += x * self.scaling
+            else:
+                result += (self.krona_dropout(x)@mx) * self.scaling
             return result
         else:
             return F.linear(x, T(self.weight), bias=self.bias)

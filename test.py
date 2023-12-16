@@ -1,6 +1,3 @@
-from customed_transformers import RobertaModel, AutoTokenizer, RobertaConfig
-
-config = RobertaConfig.f
-
-print(111)
-print(222)
+from datetime import datetime
+cur_time = datetime.now().strftime(r"%Y-%m-%d_%H_%M")
+breakpoint()

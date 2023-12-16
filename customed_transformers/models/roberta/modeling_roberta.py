@@ -208,7 +208,8 @@ class RobertaSelfAttention(nn.Module):
                     out_features=self.all_head_size,
                     krona_dim=config.krona_dim,
                     krona_alpha=config.scaling_alpha,
-                    krona_dropout=config.dropout
+                    krona_dropout=config.dropout,
+                    config=config
                 )
             else:
                 self.query = nn.Linear(config.hidden_size, self.all_head_size)
@@ -219,7 +220,8 @@ class RobertaSelfAttention(nn.Module):
                     out_features=self.all_head_size,
                     krona_dim=config.krona_dim,
                     krona_alpha=config.scaling_alpha,
-                    krona_dropout=config.dropout
+                    krona_dropout=config.dropout,
+                    config=config
                 )
             else:
                 self.value = nn.Linear(config.hidden_size, self.all_head_size)
@@ -229,10 +231,12 @@ class RobertaSelfAttention(nn.Module):
                     out_features=self.all_head_size,
                     krona_dim=config.krona_dim,
                     krona_alpha=config.scaling_alpha,
-                    krona_dropout=config.dropout
+                    krona_dropout=config.dropout,
+                    config=config
                 )
             else:
                 self.key = nn.Linear(config.hidden_size, self.all_head_size)
+                
         elif config.method == "ilra":
             if "query" in ilra_dims:
                 self.query = krona.Linear(
@@ -240,24 +244,33 @@ class RobertaSelfAttention(nn.Module):
                     out_features=self.all_head_size,
                     krona_dim=ilra_dims["query"],
                     krona_alpha=config.scaling_alpha,
-                    krona_dropout=config.dropout
+                    krona_dropout=config.dropout,
+                    config=config
                 )
+            else:
+                self.query = nn.Linear(config.hidden_size, self.all_head_size)
             if "key" in ilra_dims:
                 self.key = krona.Linear(
                     in_features=config.hidden_size,
                     out_features=self.all_head_size,
                     krona_dim=ilra_dims["key"],
                     krona_alpha=config.scaling_alpha,
-                    krona_dropout=config.dropout
+                    krona_dropout=config.dropout,
+                    config=config
                 )
+            else:
+                self.key = nn.Linear(config.hidden_size, self.all_head_size)
             if "value" in ilra_dims:
                 self.value = krona.Linear(
                     in_features=config.hidden_size,
                     out_features=self.all_head_size,
                     krona_dim=ilra_dims["value"],
                     krona_alpha=config.scaling_alpha,
-                    krona_dropout=config.dropout
+                    krona_dropout=config.dropout,
+                    config=config
                 )
+            else:
+                self.value = nn.Linear(config.hidden_size, self.all_head_size)
         else:
             self.query = nn.Linear(config.hidden_size, self.all_head_size)
             self.key = nn.Linear(config.hidden_size, self.all_head_size)
@@ -384,7 +397,7 @@ class RobertaSelfAttention(nn.Module):
 class RobertaSelfOutput(nn.Module):
     def __init__(self, config, ilra_dims=None):
         super().__init__()
-        if config.method == "lora":
+        if config.method == "lora" and "output" in config.modules_to_apply:
             self.dense = lora.Linear(
                 in_features=config.hidden_size,
                 out_features=config.hidden_size,
@@ -392,21 +405,23 @@ class RobertaSelfOutput(nn.Module):
                 lora_alpha=config.scaling_alpha,
                 lora_dropout=config.dropout
             )
-        elif config.method == "krona":
+        elif config.method == "krona" and "output" in config.modules_to_apply:
             self.dense = krona.Linear(
                 in_features=config.hidden_size,
                 out_features=config.hidden_size,
                 krona_dim=config.krona_dim,
                 krona_alpha=config.scaling_alpha,
-                krona_dropout=config.dropout
+                krona_dropout=config.dropout,
+                config=config
             )
-        elif config.method == "ilra" and "output" in ilra_dims:
+        elif config.method == "ilra" and "output" in config.modules_to_apply:
             self.dense = krona.Linear(
                 in_features=config.hidden_size,
                 out_features=config.hidden_size,
                 krona_dim=ilra_dims["output"],
                 krona_alpha=config.scaling_alpha,
-                krona_dropout=config.dropout
+                krona_dropout=config.dropout,
+                config=config
             )
         else:
             self.dense = nn.Linear(config.hidden_size, config.hidden_size)
@@ -474,7 +489,7 @@ class RobertaAttention(nn.Module):
 class RobertaIntermediate(nn.Module):
     def __init__(self, config, ilra_dims=None):
         super().__init__()
-        if config.method == "lora":
+        if config.method == "lora" and "ffn1" in config.modules_to_apply:
             self.dense = lora.Linear(
                 in_features=config.hidden_size,
                 out_features=config.intermediate_size,
@@ -482,13 +497,14 @@ class RobertaIntermediate(nn.Module):
                 lora_alpha=config.scaling_alpha,
                 lora_dropout=config.dropout
             )
-        elif config.method == "krona":
+        elif config.method == "krona" and "ffn1" in config.modules_to_apply:
             self.dense = krona.Linear(
                 in_features=config.hidden_size,
                 out_features=config.intermediate_size,
                 krona_dim=config.krona_dim,
                 krona_alpha=config.scaling_alpha,
-                krona_dropout=config.dropout
+                krona_dropout=config.dropout,
+                config=config
             )
         elif config.method == "pa":
             self.dense = lora.Linear(
@@ -499,13 +515,14 @@ class RobertaIntermediate(nn.Module):
                 lora_alpha=config.scaling_alpha,
                 lora_dropout=config.dropout
             )
-        elif config.method == "ilra" and "ffn1" in ilra_dims:
+        elif config.method == "ilra" and "ffn1" in config.modules_to_apply:
             self.dense = krona.Linear(
                 in_features=config.hidden_size,
                 out_features=config.intermediate_size,
                 krona_dim=ilra_dims["ffn1"],
                 krona_alpha=config.scaling_alpha,
-                krona_dropout=config.dropout
+                krona_dropout=config.dropout,
+                config=config
             )
             
         else:
@@ -525,7 +542,7 @@ class RobertaIntermediate(nn.Module):
 class RobertaOutput(nn.Module):
     def __init__(self, config, ilra_dims=None):
         super().__init__()
-        if config.method == "lora":
+        if config.method == "lora" and "ffn2" in config.modules_to_apply:
             self.dense = lora.Linear(
                 in_features=config.intermediate_size,
                 out_features=config.hidden_size,
@@ -533,13 +550,14 @@ class RobertaOutput(nn.Module):
                 lora_alpha=config.scaling_alpha,
                 lora_dropout=config.dropout
             )
-        elif config.method == "krona":
+        elif config.method == "krona" and "ffn2" in config.modules_to_apply:
             self.dense = krona.Linear(
                 in_features=config.intermediate_size,
                 out_features=config.hidden_size,
                 krona_dim=config.krona_dim,
                 krona_alpha=config.scaling_alpha,
-                krona_dropout=config.dropout
+                krona_dropout=config.dropout,
+                config=config
             )
         elif config.method == "pa":
             self.dense = lora.Linear(
@@ -550,13 +568,14 @@ class RobertaOutput(nn.Module):
                 lora_alpha=config.scaling_alpha,
                 lora_dropout=config.dropout
             )
-        elif config.method == "ilra" and "ffn2" in ilra_dims:
+        elif config.method == "ilra" and "ffn2" in config.modules_to_apply:
             self.dense = krona.Linear(
                 in_features=config.intermediate_size,
                 out_features=config.hidden_size,
                 krona_dim=ilra_dims["ffn2"],
                 krona_alpha=config.scaling_alpha,
-                krona_dropout=config.dropout
+                krona_dropout=config.dropout,
+                config=config
             )
         else:
             self.dense = nn.Linear(config.intermediate_size, config.hidden_size)
