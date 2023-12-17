@@ -26,11 +26,12 @@ def get_args():
     parser.add_argument("--lr", default=1e-3, type=float, help="learning rate")
     parser.add_argument("--num_epochs", default=10, type=int, help="epochs")
     parser.add_argument("--weight_decay", default=0.01, type=float, help="weight decay")
-    parser.add_argument("--warmup_steps", default=100, type=int, help="warmup steps")
+    # parser.add_argument("--warmup_steps", default=100, type=int, help="warmup steps")
     parser.add_argument("--method", type=str, help="method")
     parser.add_argument("--dropout", default=0.1, type=float, help="dropout ratio")
     parser.add_argument("--modules_to_apply", default="query,value", type=str, help="modules to apply")
     parser.add_argument("--scaling_alpha", default=8, type=float, help="lora alpha")
+    parser.add_argument("--scale", default=1, type=float, help="whether to scale")
     
     # test
     parser.add_argument("--do_test", default=0, type=int, help="do test")
@@ -52,7 +53,7 @@ if __name__ == '__main__':
     start_time = time.time()
     config = get_args()
     if config.method == "ilra":
-        config.residual_connection = True
+        config.residual_connection = False
     else:
         config.residual_connection = False
     config.modules_to_apply = config.modules_to_apply.split(',')
@@ -105,7 +106,7 @@ if __name__ == '__main__':
     config_dict = config.__dict__
     config_dict["consumed_time"] = consumed_time
     config_dict.update(dev_res)
-    with open(f"result/{config.dataset_name}_{config.method}_{str(f1_score)}.json", "w") as f:
+    with open(f"result/{config.dataset_name}/{config.method}_{str(f1_score)}.json", "w") as f:
         json.dump(config_dict, f, ensure_ascii=False, indent=4)
-        print(f"save result to result/{config.dataset_name}_{config.method}_{str(f1_score)}.json")
+        print(f"save result to result/{config.dataset_name}/{config.method}_{str(f1_score)}.json")
     

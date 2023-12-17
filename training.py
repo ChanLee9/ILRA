@@ -31,12 +31,14 @@ def get_optimizer(model, dataloader, config):
         },
     ]
     optimizer = torch.optim.AdamW(optimizer_grouped_parameters, lr=config.lr)
+    total_warmup_steps=config.num_epochs*len(dataloader)
     lr_scheduler = get_scheduler(
         'linear',
         optimizer,
-        num_warmup_steps=config.warmup_steps,
-        num_training_steps=config.num_epochs*len(dataloader)
+        num_warmup_steps=total_warmup_steps,
+        num_training_steps=100
     )
+    # print(f'num_training_steps: {int(0.08 * total_warmup_steps)}')
     return optimizer, lr_scheduler
 
 def train_loop(dataloader, model, optimizer, lr_scheduler, epoch):     # 一轮训练
@@ -118,9 +120,7 @@ def get_customed_model(config):
         base_model.config.method = config.method
         if config.method == "fft":
             pass
-        elif config.method == "lora":
-            lora.mark_only_lora_as_trainable(base_model)
-        elif config.method == "pa":
+        elif config.method == "lora" or config.method == "ilra" or config.method == "pa":
             lora.mark_only_lora_as_trainable(base_model)
         elif config.method == "bit_fit":
             # freeze all parameters except bias (LayerNorm.bias excluded)
@@ -129,7 +129,7 @@ def get_customed_model(config):
                     p.requires_grad = False
                 elif "LayerNorm.bias" in n:
                     p.requires_grad = False
-        elif config.method == "krona" or config.method == "ilra":
+        elif config.method == "krona":
             krona.mark_only_krona_as_trainable(base_model)
         # freeze_model(base_model)
         model = NLU_Model(base_model, config).to(config.device)

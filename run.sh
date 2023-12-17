@@ -1,14 +1,14 @@
 DATASET_NAME=MRPC
 TASK_TYPE=NLU
 BATCH_SIZE=64
-LR=7e-4
+LR=5e-3
 MAX_LEN=512
-METHOD=ilra
+METHOD=pa
 LORA_R=2
-KRONA_DIM=32
-SCALING_ALPHA=4
+KRONA_DIM=3
+SCALING_ALPHA=32
 NUM_EPOCHS=20
-MODULES_TO_APPLY="ffn1,ffn2"
+MODULES_TO_APPLY="query,value"
 
 python main.py \
     --dataset_name $DATASET_NAME \
@@ -29,5 +29,5 @@ python main.py \
     --scaling_alpha $SCALING_ALPHA \
     --dropout 0.1 \
     --weight_decay 1e-2 \
-    --warmup_steps 100 \
     --do_test 0\
+    --scale 1 \

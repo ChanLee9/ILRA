@@ -1,0 +1,51 @@
+{
+    "dataset_name": "MRPC",
+    "task_type": "NLU",
+    "batch_size": 64,
+    "max_length": 512,
+    "num_tags": 2,
+    "model_name_or_path": "../pretrained_models/roberta",
+    "device": "cuda:0",
+    "lr": 0.0008,
+    "num_epochs": 20,
+    "weight_decay": 0.01,
+    "method": "lora",
+    "dropout": 0.1,
+    "modules_to_apply": [
+        "query",
+        "value"
+    ],
+    "scaling_alpha": 3.0,
+    "scale": 1.0,
+    "do_test": 0,
+    "lora_r": 2,
+    "krona_dim": 32,
+    "krona_dropout": 0.1,
+    "residual_connection": false,
+    "consumed_time": 192.7248978614807,
+    "0": {
+        "precision": 0.77734375,
+        "recall": 0.8291666666666667,
+        "f1-score": 0.8024193548387097,
+        "support": 240.0
+    },
+    "1": {
+        "precision": 0.9267857142857143,
+        "recall": 0.9010416666666666,
+        "f1-score": 0.9137323943661972,
+        "support": 576.0
+    },
+    "accuracy": 0.8799019607843137,
+    "macro avg": {
+        "precision": 0.8520647321428572,
+        "recall": 0.8651041666666667,
+        "f1-score": 0.8580758746024535,
+        "support": 816.0
+    },
+    "weighted avg": {
+        "precision": 0.8828321953781513,
+        "recall": 0.8799019607843137,
+        "f1-score": 0.8809932650934069,
+        "support": 816.0
+    }
+}

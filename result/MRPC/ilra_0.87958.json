@@ -6,10 +6,9 @@
     "num_tags": 2,
     "model_name_or_path": "../pretrained_models/roberta",
     "device": "cuda:0",
-    "lr": 0.0007,
+    "lr": 0.0008,
     "num_epochs": 20,
     "weight_decay": 0.01,
-    "warmup_steps": 100,
     "method": "ilra",
     "dropout": 0.1,
     "modules_to_apply": [
@@ -17,11 +16,12 @@
         "value"
     ],
     "scaling_alpha": 3.0,
+    "scale": 1.0,
     "do_test": 0,
     "lora_r": 2,
     "krona_dim": 32,
     "krona_dropout": 0.1,
-    "residual_connection": true,
+    "residual_connection": false,
     "ilra_dims": {
         "0": {
             "query": 4,
@@ -72,30 +72,30 @@
             "value": 4
         }
     },
-    "consumed_time": 219.99394607543945,
+    "consumed_time": 195.30755281448364,
     "0": {
-        "precision": 0.7734375,
-        "recall": 0.825,
-        "f1-score": 0.7983870967741935,
+        "precision": 0.7786561264822134,
+        "recall": 0.8208333333333333,
+        "f1-score": 0.7991886409736308,
         "support": 240.0
     },
     "1": {
-        "precision": 0.925,
-        "recall": 0.8993055555555556,
-        "f1-score": 0.9119718309859155,
+        "precision": 0.9236234458259325,
+        "recall": 0.9027777777777778,
+        "f1-score": 0.9130816505706759,
         "support": 576.0
     },
-    "accuracy": 0.8774509803921569,
+    "accuracy": 0.8786764705882353,
     "macro avg": {
-        "precision": 0.84921875,
-        "recall": 0.8621527777777778,
-        "f1-score": 0.8551794638800545,
+        "precision": 0.8511397861540729,
+        "recall": 0.8618055555555555,
+        "f1-score": 0.8561351457721533,
         "support": 816.0
     },
     "weighted avg": {
-        "precision": 0.8804227941176471,
-        "recall": 0.8774509803921569,
-        "f1-score": 0.8785645562177621,
+        "precision": 0.8809859989601327,
+        "recall": 0.8786764705882353,
+        "f1-score": 0.879583706571545,
         "support": 816.0
     }
 }
