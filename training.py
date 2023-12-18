@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from transformers import get_scheduler
 from customed_transformers import RobertaModel, RobertaConfig
 
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, matthews_corrcoef, accuracy_score
 
 from preprocess import *
 from model import *
@@ -59,7 +59,7 @@ def train_loop(dataloader, model, optimizer, lr_scheduler, epoch):     # 一轮�
     return total_loss
 
 
-def dev_loop(dataloader, model):
+def dev_loop(dataloader, model, config):
     progress_bar = tqdm(range(len(dataloader)))
     progress_bar.set_description(f'validating... ')
     model.eval()
@@ -69,8 +69,13 @@ def dev_loop(dataloader, model):
             y_true.extend(item['label'])
             y_pred.extend(model(item)[1].cpu().numpy())
             progress_bar.update(1)
-        print(f'dev result: \n {classification_report(y_true, y_pred)}')
-    return y_pred, y_true
+        if config.dataset_name == "CoLA":
+            res = matthews_corrcoef(y_true, y_pred)
+            print(f'dev result: \n {res}')
+        else:
+            res = accuracy_score(y_true, y_pred)
+            print(f'dev result: \n {classification_report(y_true, y_pred)}')
+    return y_pred, y_true, res
 
 
 def test_loop(dataloader, model):
@@ -101,6 +106,7 @@ def print_trainable_params(model):
                 print(n, p.shape)
     print(f'total parameters: {total_params} || trainable parameters: {trainable_params} || trainable ratio: {100*trainable_ratio:.2f}%'
         )
+    return trainable_params
 
 def get_base_model(config):
     if config.task_type == "NLU":

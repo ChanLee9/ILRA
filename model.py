@@ -8,7 +8,11 @@ class NLU_Model(nn.Module):
     def __init__(self, base_model, config) -> None:
         super().__init__()
         self.base_model = base_model
-        self.fc = nn.Linear(self.base_model.pooler.dense.weight.shape[1], config.num_tags)
+        hidden_size = self.base_model.pooler.dense.weight.shape[1]
+        self.dense = nn.Linear(hidden_size, hidden_size)
+        self.act_fn = nn.Tanh()
+        self.dropout = nn.Dropout(config.dropout)    
+        self.fc = nn.Linear(hidden_size, config.num_tags)
         self.device = config.device
         self.max_length = config.max_length
         self.tokenizer = AutoTokenizer.from_pretrained(config.model_name_or_path)
@@ -38,7 +42,11 @@ class NLU_Model(nn.Module):
                                             return_tensors='pt')
         text_encodings = text_encodings.to(self.device)
         logits = self.base_model(**text_encodings)
-        logits = self.fc(logits.pooler_output)
+        logits = self.dropout(logits.pooler_output)
+        logits = self.dense(logits)
+        logits = self.act_fn(logits)
+        logits = self.dropout(logits)
+        logits = self.fc(logits)
         y_pred = torch.argmax(logits, dim=1)
         return logits, y_pred
             

@@ -1,0 +1,27 @@
+{
+    "dataset_name": "CoLA",
+    "task_type": "NLU",
+    "batch_size": 64,
+    "max_length": 512,
+    "num_tags": 2,
+    "model_name_or_path": "../pretrained_models/roberta",
+    "device": "cuda:0",
+    "lr": 0.0009,
+    "num_epochs": 20,
+    "weight_decay": 0.01,
+    "method": "bit_fit",
+    "dropout": 0.1,
+    "modules_to_apply": [
+        "query",
+        "value"
+    ],
+    "scaling_alpha": 32.0,
+    "scale": 1.0,
+    "do_test": 0,
+    "lora_r": 2,
+    "krona_dim": 3,
+    "krona_dropout": 0.1,
+    "residual_connection": false,
+    "dev_res": 0.5829415770828686,
+    "consumed_time": 162.11249375343323
+}

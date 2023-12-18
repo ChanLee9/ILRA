@@ -16,7 +16,7 @@
 """PyTorch RoBERTa model."""
 
 # revise here
-import loralib as lora
+import modified_modules.lora_layer as lora
 import modified_modules.krona_layer as krona
 import modified_modules.ilra_layer as ilra
 

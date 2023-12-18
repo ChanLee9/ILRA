@@ -9,7 +9,7 @@ from training import *
 from preprocess import *
 from model import *
 
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, matthews_corrcoef, accuracy_score
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -78,22 +78,26 @@ if __name__ == '__main__':
         config.ilra_dims = model.base_model.encoder.ilra_dims
         for ly in config.ilra_dims:
             print(f"layer{ly}: ilra dims: {config.ilra_dims[ly]}")
-    print_trainable_params(model)
+    trainable_params = print_trainable_params(model)
 
     optimizer, lr_scheduler = get_optimizer(model, train_dataloader, config)
     # training
+    best_res = 0.
     for epoch in range(config.num_epochs):
         train_loop(train_dataloader, model, optimizer, lr_scheduler, epoch)
-        y_pred, y_true = dev_loop(dev_dataloader, model)
+        y_pred, y_true, res = dev_loop(dev_dataloader, model, config)
+        best_res = max(best_res, res)
     
-    # evaluation
-    y_pred, y_true = dev_loop(dev_dataloader, model)
-    dev_res = classification_report(y_true, y_pred, output_dict=True)
+    # # evaluation
+    # y_pred, y_true, res = dev_loop(dev_dataloader, model, config)
+    # if config.dataset_name == "CoLA":
+    #     dev_res = matthews_corrcoef(y_true, y_pred)
+    # else:
+    #     dev_res = accuracy_score(y_true, y_pred, output_dict=True)
+
+    config.dev_res= best_res
+    config.num_trainable_params = trainable_params
     print(f'final dev res\n')
-    for key in dev_res:
-        print(f"{key}: {dev_res[key]}")
-    f1_score = round(dev_res["weighted avg"]["f1-score"], 5)
-    
     # test 
     if config.do_test:
         y_pred = test_loop(test_dataloader, model)
@@ -105,8 +109,8 @@ if __name__ == '__main__':
     # cur_time = datetime.now().strftime(r"%Y-%m-%d_%H_%M")
     config_dict = config.__dict__
     config_dict["consumed_time"] = consumed_time
-    config_dict.update(dev_res)
-    with open(f"result/{config.dataset_name}/{config.method}_{str(f1_score)}.json", "w") as f:
+
+    with open(f"result/{config.dataset_name}/{config.method}_{str(best_res)}.json", "w") as f:
         json.dump(config_dict, f, ensure_ascii=False, indent=4)
-        print(f"save result to result/{config.dataset_name}/{config.method}_{str(f1_score)}.json")
+        print(f"save result to result/{config.dataset_name}/{config.method}_{str(best_res)}.json")
     
