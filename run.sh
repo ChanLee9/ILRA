@@ -1,13 +1,13 @@
 DATASET_NAME=CoLA
 TASK_TYPE=NLU
-BATCH_SIZE=64
-LR=7e-4
+BATCH_SIZE=32
+LR=3e-04
 MAX_LEN=512
-METHOD=pa
+METHOD=fft
 LORA_R=2
 KRONA_DIM=32
 SCALING_ALPHA=2
-NUM_EPOCHS=20
+NUM_EPOCHS=10
 MODULES_TO_APPLY="query,value"
 
 python main.py \
@@ -29,5 +29,5 @@ python main.py \
     --scaling_alpha $SCALING_ALPHA \
     --dropout 0.1 \
     --weight_decay 1e-2 \
-    --do_test 0\
+    --do_test 0 \
     --scale 1 \

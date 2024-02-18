@@ -1,4 +1,5 @@
 import time
+import copy
 from datetime import datetime
 import json
 
@@ -9,7 +10,8 @@ from training import *
 from preprocess import *
 from model import *
 
-from sklearn.metrics import classification_report, matthews_corrcoef, accuracy_score
+from scipy.stats import pearsonr, spearmanr
+from sklearn.metrics import classification_report, matthews_corrcoef, accuracy_score, f1_score
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -58,13 +60,13 @@ if __name__ == '__main__':
         config.residual_connection = False
     config.modules_to_apply = config.modules_to_apply.split(',')
     
-    train, dev, test = read_data(config)
+    train, dev = read_data(config)
     train_dataset = MyDataset(config, train)
-    test_dataset = MyDataset(config, test)
+    # test_dataset = MyDataset(config, test)
     dev_dataset = MyDataset(config, dev)
     
     train_dataloader = MyDataLoader(train_dataset, config, shuffle=True)
-    test_dataloader = MyDataLoader(test_dataset, config, shuffle=True)
+    # test_dataloader = MyDataLoader(test_dataset, config, shuffle=True)
     dev_dataloader = MyDataLoader(dev_dataset, config, shuffle=True)
     
     model = get_customed_model(config)
@@ -78,35 +80,62 @@ if __name__ == '__main__':
         config.ilra_dims = model.base_model.encoder.ilra_dims
         for ly in config.ilra_dims:
             print(f"layer{ly}: ilra dims: {config.ilra_dims[ly]}")
-    trainable_params = print_trainable_params(model)
+    trainable_params, trainable_ratio = print_trainable_params(model)
+    config.num_trainable_params = trainable_params
+    config.trainable_ratio = trainable_ratio
 
     optimizer, lr_scheduler = get_optimizer(model, train_dataloader, config)
+    
     # training
     best_res = 0.
     for epoch in range(config.num_epochs):
         train_loop(train_dataloader, model, optimizer, lr_scheduler, epoch)
-        y_pred, y_true, res = dev_loop(dev_dataloader, model, config)
-        best_res = max(best_res, res)
+        y_pred, y_true = dev_loop(dev_dataloader, model)
+        if config.dataset_name == "CoLA":
+            res = matthews_corrcoef(y_true, y_pred)
+            print(f'dev result: \n {res}')
+        elif config.dataset_name == "RTE":
+            res = accuracy_score(y_true, y_pred)
+            print(f'dev result: \n {classification_report(y_true, y_pred)}')
+        elif config.dataset_name == "MRPC":
+            acc = accuracy_score(y_true, y_pred)
+            f1 = f1_score(y_true, y_pred)
+            res = (acc + f1) / 2
+            print(f'dev result: \n {classification_report(y_true, y_pred)}')
+        
+        if res > best_res:
+            best_res = res
+            # print("copy best model state dict\n")
+            # best_model_states = copy.deepcopy(model.state_dict())
     
-    # # evaluation
-    # y_pred, y_true, res = dev_loop(dev_dataloader, model, config)
-    # if config.dataset_name == "CoLA":
-    #     dev_res = matthews_corrcoef(y_true, y_pred)
-    # else:
-    #     dev_res = accuracy_score(y_true, y_pred, output_dict=True)
-
-    config.dev_res= best_res
-    config.num_trainable_params = trainable_params
-    print(f'final dev res\n')
-    # test 
-    if config.do_test:
-        y_pred = test_loop(test_dataloader, model)
+    # print("testing...\n")
+    # # testing 
+    # if config.do_test == 1:
+    #     print("loading best model state dict...\n")
+    #     model.load_state_dict(best_model_states)
+    #     y_pred, y_true = dev_loop(test_dataloader, model)
+    #     if config.dataset_name == "CoLA":
+    #         res = matthews_corrcoef(y_true, y_pred)
+    #         print(f'test result: \n {res}')
+    #     elif config.dataset_name == "RTE":
+    #         res = accuracy_score(y_true, y_pred)
+    #         print(f'test result: \n {classification_report(y_true, y_pred)}')
+    #     elif config.dataset_name == "MRPC":
+    #         acc = accuracy_score(y_true, y_pred)
+    #         f1 = f1_score(y_true, y_pred)
+    #         res = (acc + f1) / 2
+    #         print(f'test result: \n {classification_report(y_true, y_pred)}')
     
+    if config.dataset_name == "CoLA":
+        config.res= res
+    elif config.dataset_name == "RTE":
+        config.res = res
+    elif config.dataset_name == "MRPC":
+        config.acc = acc
+        config.f1 = f1
+        
     end_time = time.time()  
     consumed_time = end_time - start_time
-    
-    # save result
-    # cur_time = datetime.now().strftime(r"%Y-%m-%d_%H_%M")
     config_dict = config.__dict__
     config_dict["consumed_time"] = consumed_time
 

@@ -9,8 +9,6 @@ from dataclasses import dataclass
 from transformers import get_scheduler
 from customed_transformers import RobertaModel, RobertaConfig
 
-from sklearn.metrics import classification_report, matthews_corrcoef, accuracy_score
-
 from preprocess import *
 from model import *
 from methods import *
@@ -59,7 +57,7 @@ def train_loop(dataloader, model, optimizer, lr_scheduler, epoch):     # 一轮�
     return total_loss
 
 
-def dev_loop(dataloader, model, config):
+def dev_loop(dataloader, model):
     progress_bar = tqdm(range(len(dataloader)))
     progress_bar.set_description(f'validating... ')
     model.eval()
@@ -69,24 +67,20 @@ def dev_loop(dataloader, model, config):
             y_true.extend(item['label'])
             y_pred.extend(model(item)[1].cpu().numpy())
             progress_bar.update(1)
-        if config.dataset_name == "CoLA":
-            res = matthews_corrcoef(y_true, y_pred)
-            print(f'dev result: \n {res}')
-        else:
-            res = accuracy_score(y_true, y_pred)
-            print(f'dev result: \n {classification_report(y_true, y_pred)}')
-    return y_pred, y_true, res
+    return y_pred, y_true
 
 
 def test_loop(dataloader, model):
     progress_bar = tqdm(range(len(dataloader)))
     progress_bar.set_description(f'testing... ')
     model.eval()
-    y_pred = []
+    y_pred,y_true = [], []
     with torch.no_grad():
         for batch, item in enumerate(dataloader):
+            y_true.extend(item['label'])
             y_pred.extend(model(item)[1].cpu().numpy())
-        return y_pred
+            progress_bar.update(1)
+        return y_pred, y_true
 
 def print_trainable_params(model):
     """打印模型可训练参数量占比
@@ -106,7 +100,7 @@ def print_trainable_params(model):
                 print(n, p.shape)
     print(f'total parameters: {total_params} || trainable parameters: {trainable_params} || trainable ratio: {100*trainable_ratio:.2f}%'
         )
-    return trainable_params
+    return trainable_params, trainable_ratio
 
 def get_base_model(config):
     if config.task_type == "NLU":
@@ -138,7 +132,10 @@ def get_customed_model(config):
         elif config.method == "krona":
             krona.mark_only_krona_as_trainable(base_model)
         # freeze_model(base_model)
-        model = NLU_Model(base_model, config).to(config.device)
+        if config.dataset_name == "STS-B":
+            model = Reg_Model(base_model, config).to(config.device)
+        else:
+            model = Clf_Model(base_model, config).to(config.device)
     return model
 
 if __name__ == "__main__":
