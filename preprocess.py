@@ -11,7 +11,6 @@ def read_data(config: object) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame): # t
     dataset_name = config.dataset_name
     data_dir = os.path.join("datasets", config.dataset_name)
     train_path = os.path.join(data_dir, "train.tsv")
-    test_path = os.path.join(data_dir, "test.tsv")
     dev_path = os.path.join(data_dir, "dev.tsv")
     
     if dataset_name == "CoLA":
@@ -84,15 +83,17 @@ def read_data(config: object) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame): # t
     elif dataset_name == "SST-2":
         # The Stanford Sentiment Treebank, single sentence classification
         # The SST-2 dataset has labels, so we can evaluate the model offline
-        train_data = pd.read_csv(train_path, sep='\t', header=0, names=["sentence1", "label"])
-        dev_data = pd.read_csv(dev_path, sep='\t', header=0, names=["sentence1", "label"])
+        train_data = pd.read_csv(train_path, sep='\t', header=0, names=["sentence1", "label"], on_bad_lines='skip')
+        dev_data = pd.read_csv(dev_path, sep='\t', header=0, names=["sentence1", "label"], on_bad_lines='skip')
         return (train_data, dev_data)
     
     elif dataset_name == "STS-B":
         # The Semantic Textual Similarity Benchmark, regression
         # The STS-B dataset has labels, so we can evaluate the model offline
         train_data = pd.read_csv(train_path, sep='\t', header=0, on_bad_lines='skip')
+        train_data = train_data.dropna()
         dev_data = pd.read_csv(dev_path, sep='\t', header=0, on_bad_lines='skip')
+        dev_data = dev_data.dropna()
         train_data["label"] = train_data["score"]
         dev_data["label"] = dev_data["score"]
         return (train_data[['sentence1', 'sentence2', 'label']], dev_data[['sentence1', 'sentence2', 'label']])
@@ -157,7 +158,7 @@ if __name__ == "__main__":
     config = Config()
     
     # test for read data
-    config.dataset_name = "WNLI"
+    config.dataset_name = "STS-B"
     train, dev = read_data(config)
     breakpoint()
     

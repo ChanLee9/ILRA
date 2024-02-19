@@ -59,6 +59,10 @@ if __name__ == '__main__':
     else:
         config.residual_connection = False
     config.modules_to_apply = config.modules_to_apply.split(',')
+    if config.dataset_name in ["CoLA", "SST-2", "MRPC", "QQP", "QNLI", "RTE", "WNLI"]:
+        config.num_tags = 2
+    elif config.dataset_name in ["MNLI-m", "MNLI-mm"]:
+        config.num_tags = 3
     
     train, dev = read_data(config)
     train_dataset = MyDataset(config, train)
@@ -94,14 +98,20 @@ if __name__ == '__main__':
         if config.dataset_name == "CoLA":
             res = matthews_corrcoef(y_true, y_pred)
             print(f'dev result: \n {res}')
-        elif config.dataset_name == "RTE":
+        elif config.dataset_name in ["RTE", "SST-2", "MNLI-m", "MNLI-mm", "QNLI", "WNLI"]:
             res = accuracy_score(y_true, y_pred)
             print(f'dev result: \n {classification_report(y_true, y_pred)}')
-        elif config.dataset_name == "MRPC":
+        elif config.dataset_name in ["MRPC", "QQP"]:
             acc = accuracy_score(y_true, y_pred)
             f1 = f1_score(y_true, y_pred)
             res = (acc + f1) / 2
             print(f'dev result: \n {classification_report(y_true, y_pred)}')
+        
+        elif config.dataset_name == "STS-B":
+            pearsonr_res = pearsonr(y_true, y_pred)
+            spearmanr_res = spearmanr(y_true, y_pred)
+            res = (pearsonr_res[0] + spearmanr_res[0]) / 2
+            print(f'dev result: \n pearsonr: {pearsonr_res[0]}, spearmanr: {spearmanr_res[0]}')
         
         if res > best_res:
             best_res = res
@@ -127,12 +137,15 @@ if __name__ == '__main__':
     #         print(f'test result: \n {classification_report(y_true, y_pred)}')
     
     if config.dataset_name == "CoLA":
-        config.res= res
-    elif config.dataset_name == "RTE":
-        config.res = res
-    elif config.dataset_name == "MRPC":
+        config.matthews_corrcoef_res= best_res
+    elif config.dataset_name in ["RTE", "SST-2", "MNLI-m", "MNLI-mm", "QNLI", "WNLI"]:
+        config.acc = best_res
+    elif config.dataset_name in ["MRPC", "QQP"]:
         config.acc = acc
         config.f1 = f1
+    elif config.dataset_name == "STS-B":
+        config.pearsonr = pearsonr_res[0]
+        config.spearmanr = spearmanr_res[0]
         
     end_time = time.time()  
     consumed_time = end_time - start_time

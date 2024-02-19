@@ -61,7 +61,7 @@ class Reg_Model(nn.Module):
     
     def loss_fn(self, item):
         criterion = nn.MSELoss()
-        y_true = torch.LongTensor(item['label']).to(self.device)
+        y_true = torch.FloatTensor(item['label']).to(self.device)
         logits, y_pred = self.forward(item)
         loss = criterion(logits, y_true)
         return loss
@@ -84,7 +84,8 @@ class Reg_Model(nn.Module):
                                             return_tensors='pt')
         text_encodings = text_encodings.to(self.device)
         logits = self.base_model(**text_encodings)
+        # breakpoint()
         logits = self.dropout(logits.pooler_output)
         logits = self.fc(logits)
-        return logits, logits
+        return logits.flatten(), logits.flatten()
     

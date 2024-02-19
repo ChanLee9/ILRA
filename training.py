@@ -29,12 +29,12 @@ def get_optimizer(model, dataloader, config):
         },
     ]
     optimizer = torch.optim.AdamW(optimizer_grouped_parameters, lr=config.lr)
-    total_warmup_steps=config.num_epochs*len(dataloader)
+    total_steps=config.num_epochs*len(dataloader)
     lr_scheduler = get_scheduler(
         'linear',
         optimizer,
-        num_warmup_steps=total_warmup_steps,
-        num_training_steps=100
+        num_warmup_steps=0.06 * total_steps,
+        num_training_steps=total_steps
     )
     # print(f'num_training_steps: {int(0.08 * total_warmup_steps)}')
     return optimizer, lr_scheduler
@@ -65,7 +65,7 @@ def dev_loop(dataloader, model):
     with torch.no_grad():
         for batch, item in enumerate(dataloader):
             y_true.extend(item['label'])
-            y_pred.extend(model(item)[1].cpu().numpy())
+            y_pred.extend(model(item)[1].reshape(-1).cpu().numpy())
             progress_bar.update(1)
     return y_pred, y_true
 

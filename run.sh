@@ -1,8 +1,8 @@
-DATASET_NAME=CoLA
+DATASET_NAME=STS-B
 TASK_TYPE=NLU
-BATCH_SIZE=32
-LR=3e-04
-MAX_LEN=512
+BATCH_SIZE=16
+LR=1e-05
+MAX_LEN=256
 METHOD=fft
 LORA_R=2
 KRONA_DIM=32
@@ -20,7 +20,6 @@ python main.py \
     --num_epochs $NUM_EPOCHS \
     --method $METHOD \
     --device cuda:0 \
-    --num_tags 2 \
     --lora_r $LORA_R \
     --method $METHOD \
     --krona_dim $KRONA_DIM \
@@ -28,6 +27,6 @@ python main.py \
     --modules_to_apply $MODULES_TO_APPLY \
     --scaling_alpha $SCALING_ALPHA \
     --dropout 0.1 \
-    --weight_decay 1e-2 \
+    --weight_decay 0.1 \
     --do_test 0 \
     --scale 1 \

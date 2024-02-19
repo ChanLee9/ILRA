@@ -1,0 +1,30 @@
+{
+    "dataset_name": "STS-B",
+    "task_type": "NLU",
+    "batch_size": 16,
+    "max_length": 256,
+    "num_tags": 2,
+    "model_name_or_path": "../pretrained_models/roberta",
+    "device": "cuda:0",
+    "lr": 2e-05,
+    "num_epochs": 10,
+    "weight_decay": 0.1,
+    "method": "fft",
+    "dropout": 0.1,
+    "modules_to_apply": [
+        "query",
+        "value"
+    ],
+    "scaling_alpha": 2.0,
+    "scale": 1.0,
+    "do_test": 0,
+    "lora_r": 2,
+    "krona_dim": 32,
+    "krona_dropout": 0.1,
+    "residual_connection": false,
+    "num_trainable_params": 124646401,
+    "trainable_ratio": 1.0,
+    "pearsonr": 0.910487506608466,
+    "spearmanr": 0.9084927117174506,
+    "consumed_time": 249.50364112854004
+}
