@@ -152,7 +152,7 @@ if __name__ == '__main__':
     config_dict = config.__dict__
     config_dict["consumed_time"] = consumed_time
 
-    with open(f"result/{config.dataset_name}/{config.method}_{str(best_res)}.json", "w") as f:
+    with open(f"result/{config.dataset_name}/{config.method}_{str(round(best_res, 6))}.json", "w") as f:
         json.dump(config_dict, f, ensure_ascii=False, indent=4)
-        print(f"save result to result/{config.dataset_name}/{config.method}_{str(best_res)}.json")
+        print(f"save result to result/{config.dataset_name}/{config.method}_{str(round(best_res, 6))}.json")
     
