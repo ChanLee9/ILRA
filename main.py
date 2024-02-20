@@ -54,6 +54,9 @@ def get_args():
 if __name__ == '__main__':
     start_time = time.time()
     config = get_args()
+    
+    assert config.method in ["fft", "lora", "ilra", "pa", "bit_fit", "krona"]
+    
     if config.method == "ilra":
         config.residual_connection = False
     else:

@@ -1,15 +1,15 @@
 {
-    "dataset_name": "CoLA",
+    "dataset_name": "SST-2",
     "task_type": "NLU",
     "batch_size": 32,
     "max_length": 256,
     "num_tags": 2,
     "model_name_or_path": "../pretrained_models/roberta",
     "device": "cuda:0",
-    "lr": 2e-05,
+    "lr": 0.001,
     "num_epochs": 10,
     "weight_decay": 0.1,
-    "method": "bitfit",
+    "method": "bit_fit",
     "dropout": 0.1,
     "modules_to_apply": [
         "query",
@@ -22,8 +22,8 @@
     "krona_dim": 32,
     "krona_dropout": 0.1,
     "residual_connection": false,
-    "num_trainable_params": 124647170,
-    "trainable_ratio": 1.0,
-    "matthews_corrcoef_res": 0.619877802436934,
-    "consumed_time": 158.84649324417114
+    "num_trainable_params": 85250,
+    "trainable_ratio": 0.0006839304895570433,
+    "acc": 0.9361009174311926,
+    "consumed_time": 911.3313717842102
 }

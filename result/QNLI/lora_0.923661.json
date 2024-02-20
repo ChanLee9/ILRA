@@ -1,0 +1,29 @@
+{
+    "dataset_name": "QNLI",
+    "task_type": "NLU",
+    "batch_size": 16,
+    "max_length": 256,
+    "num_tags": 2,
+    "model_name_or_path": "../pretrained_models/roberta",
+    "device": "cuda:0",
+    "lr": 0.001,
+    "num_epochs": 6,
+    "weight_decay": 0.1,
+    "method": "lora",
+    "dropout": 0.1,
+    "modules_to_apply": [
+        "query",
+        "value"
+    ],
+    "scaling_alpha": 4.0,
+    "scale": 1.0,
+    "do_test": 0,
+    "lora_r": 4,
+    "krona_dim": 32,
+    "krona_dropout": 0.1,
+    "residual_connection": false,
+    "num_trainable_params": 148994,
+    "trainable_ratio": 0.0011939135904778463,
+    "acc": 0.9236612229396126,
+    "consumed_time": 2153.6695280075073
+}
