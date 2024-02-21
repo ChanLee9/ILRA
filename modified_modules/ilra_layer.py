@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import numpy as np
 import math
 from typing import Optional, List
 
@@ -25,14 +26,14 @@ class IlraDim():
             ilra_dims[i] = {module: 0 for module in config.modules_to_apply}
         for ly in range(self.config.num_hidden_layers):
             for module in self.config.modules_to_apply:
-                dim = self.get_single_dim(ly, module)
+                dim = self.get_single_dim(ly, module, config.k)
                 divisible_dim = self.check_ilra_dim(dim, self.config.hidden_size, self.config.intermediate_size)
                 ilra_dims[ly][module] = divisible_dim
         return ilra_dims
 
-    def get_single_dim(self, ly, module):
+    def get_single_dim(self, ly, module, k):
         # get the turning dim of current matrix
-        pca = PCA(n_components=50)
+        pca = PCA(n_components=10)
         if module == "query":
             mx = self.model.encoder.layer[ly].attention.self.query.weight.detach().cpu().numpy()
         elif module == "key":
@@ -50,11 +51,26 @@ class IlraDim():
         pca.fit(mx)
         variance_ratio = pca.explained_variance_ratio_ 
         variance_ratio_diff = variance_ratio[1:] - variance_ratio[:-1]
-        # get the first index where the difference is going down
-        for i in range(1, len(variance_ratio_diff)):
-            diff = variance_ratio_diff[i+1] - variance_ratio_diff[i]    
-            if diff < 0:
-                return i+1
+        
+        d_c = 0
+        for j in range(len(variance_ratio_diff)-1):
+            if variance_ratio_diff[j+1] / variance_ratio_diff[j] < k:
+                d_c = j
+                break
+        # breakpoint()
+        v_m = np.mean(variance_ratio_diff[d_c:])
+            
+        for j in range(d_c, len(variance_ratio_diff)):
+            if variance_ratio_diff[j] >= v_m:
+                pca_dim = j
+                break
+        
+        v_m = np.mean(variance_ratio_diff[pca_dim:])
+        
+        for j in range(d_c, len(variance_ratio_diff)):
+            if variance_ratio_diff[j] >= v_m:
+                return j + 1
+        
         return len(variance_ratio_diff)
 
     def check_ilra_dim(self, ilra_dim, in_features, out_features):
@@ -193,6 +209,7 @@ if __name__ == "__main__":
     class Config:
         dataset_name = "MRPC"
         batch_size = 4
+        k = 0.2
         max_length = 512
         model_name_or_path = "../pretrained_models/roberta"
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

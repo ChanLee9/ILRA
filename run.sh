@@ -1,13 +1,14 @@
-DATASET_NAME=STS-B
+DATASET_NAME=QNLI
 TASK_TYPE=NLU
 BATCH_SIZE=16
-LR=2e-3
+LR=1e-3
 MAX_LEN=256
-METHOD=krona
-LORA_R=4
+METHOD=ilra
+LORA_R=2
 KRONA_DIM=12
-SCALING_ALPHA=12
-NUM_EPOCHS=10
+SCALING_ALPHA=3
+NUM_EPOCHS=3
+K=0.2
 MODULES_TO_APPLY="query,value"
 
 python main.py \
@@ -30,3 +31,4 @@ python main.py \
     --weight_decay 0.1 \
     --do_test 0 \
     --scale 1 \
+    --k $K \

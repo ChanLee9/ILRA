@@ -1,14 +1,14 @@
 {
-    "dataset_name": "CoLA",
+    "dataset_name": "STS-B",
     "task_type": "NLU",
-    "batch_size": 64,
-    "max_length": 512,
+    "batch_size": 16,
+    "max_length": 256,
     "num_tags": 2,
     "model_name_or_path": "../pretrained_models/roberta",
     "device": "cuda:0",
     "lr": 0.001,
-    "num_epochs": 20,
-    "weight_decay": 0.01,
+    "num_epochs": 10,
+    "weight_decay": 0.1,
     "method": "ilra",
     "dropout": 0.1,
     "modules_to_apply": [
@@ -19,8 +19,9 @@
     "scale": 1.0,
     "do_test": 0,
     "lora_r": 2,
-    "krona_dim": 32,
+    "krona_dim": 12,
     "krona_dropout": 0.1,
+    "k": 0.2,
     "residual_connection": false,
     "ilra_dims": {
         "0": {
@@ -29,11 +30,11 @@
         },
         "1": {
             "query": 2,
-            "value": 2
+            "value": 4
         },
         "2": {
             "query": 2,
-            "value": 2
+            "value": 4
         },
         "3": {
             "query": 4,
@@ -41,10 +42,10 @@
         },
         "4": {
             "query": 2,
-            "value": 4
+            "value": 3
         },
         "5": {
-            "query": 2,
+            "query": 4,
             "value": 3
         },
         "6": {
@@ -52,8 +53,8 @@
             "value": 2
         },
         "7": {
-            "query": 2,
-            "value": 4
+            "query": 4,
+            "value": 3
         },
         "8": {
             "query": 2,
@@ -69,9 +70,12 @@
         },
         "11": {
             "query": 4,
-            "value": 4
+            "value": 3
         }
     },
-    "matthews_corrcoef_res": 0.6377093421571085,
-    "consumed_time": 180.29455852508545
+    "num_trainable_params": 119041,
+    "trainable_ratio": 0.000954124249578244,
+    "pearsonr": 0.9045387634784773,
+    "spearmanr": 0.9038787084076282,
+    "consumed_time": 160.1412262916565
 }

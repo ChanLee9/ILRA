@@ -45,6 +45,8 @@ def get_args():
     parser.add_argument("--krona_dim", default=2, type=int, help="lora r")
     parser.add_argument("--krona_dropout", default=0.1, type=float, help="dropout ratio")
     
+    # ilra
+    parser.add_argument("--k", default=1/5, type=float, help="k of ilra")
     
     # evaluation
     

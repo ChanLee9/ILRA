@@ -72,6 +72,6 @@
             "value": 4
         }
     },
-    "dev_res": 0.6382762835780119,
+    "matthews_corrcoef_res": 0.6382762835780119,
     "consumed_time": 179.81078600883484
 }

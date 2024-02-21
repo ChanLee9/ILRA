@@ -6,7 +6,7 @@
     "num_tags": 2,
     "model_name_or_path": "../pretrained_models/roberta",
     "device": "cuda:0",
-    "lr": 0.002,
+    "lr": 0.001,
     "num_epochs": 20,
     "weight_decay": 0.01,
     "method": "ilra",
@@ -72,6 +72,6 @@
             "value": 4
         }
     },
-    "dev_res": 0.6374564262486978,
+    "matthews_corrcoef_res": 0.6374564262486978,
     "consumed_time": 176.61613726615906
 }

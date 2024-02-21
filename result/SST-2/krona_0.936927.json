@@ -7,7 +7,7 @@
     "model_name_or_path": "../pretrained_models/roberta",
     "device": "cuda:0",
     "lr": 0.003,
-    "num_epochs": 5,
+    "num_epochs": 10,
     "weight_decay": 0.1,
     "method": "krona",
     "dropout": 0.1,
@@ -25,5 +25,5 @@
     "num_trainable_params": 38402,
     "trainable_ratio": 0.0003079945263881982,
     "acc": 0.9369266055045872,
-    "consumed_time": 785.0236930847168
+    "consumed_time": 1570.0236930847168
 }
