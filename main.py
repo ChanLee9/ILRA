@@ -48,7 +48,7 @@ def get_args():
     # ilra
     parser.add_argument("--k", default=1/5, type=float, help="k of ilra")
     
-    # evaluation
+    parser.add_argument("--ablation", default=0, type=int, help="ablation study")
     
     return parser.parse_args()
 
@@ -57,7 +57,7 @@ if __name__ == '__main__':
     start_time = time.time()
     config = get_args()
     
-    assert config.method in ["fft", "lora", "ilra", "pa", "bit_fit", "krona"]
+    assert config.method in ["fft", "lora", "ilra", "pa", "bit_fit", "krona", "pilra"]
     
     if config.method == "ilra":
         config.residual_connection = False
@@ -85,10 +85,14 @@ if __name__ == '__main__':
     print(f"configs listed below:\n")
     for key in config.__dict__: 
         print(f"{key}: {config.__dict__[key]}")
-    if config.method == "ilra":
-        config.ilra_dims = model.base_model.encoder.ilra_dims
-        for ly in config.ilra_dims:
-            print(f"layer{ly}: ilra dims: {config.ilra_dims[ly]}")
+    # if config.method == "ilra":
+    #     config.ilra_dims = model.base_model.encoder.ilra_dims
+    #     for ly in config.ilra_dims:
+    #         print(f"layer{ly}: ilra dims: {config.ilra_dims[ly]}")
+    # elif config.method == "pilra":
+    #     config.pilra_dims = model.base_model.encoder.pilra_dims
+    #     for ly in config.pilra_dims:
+    #         print(f"layer{ly}: pilra dims: {config.pilra_dims[ly]}")
     trainable_params, trainable_ratio = print_trainable_params(model)
     config.num_trainable_params = trainable_params
     config.trainable_ratio = trainable_ratio
@@ -97,6 +101,8 @@ if __name__ == '__main__':
     
     # training
     best_res = 0.
+    best_acc = 0.
+    best_f1 = 0.
     for epoch in range(config.num_epochs):
         train_loop(train_dataloader, model, optimizer, lr_scheduler, epoch)
         y_pred, y_true = dev_loop(dev_dataloader, model)
@@ -110,6 +116,8 @@ if __name__ == '__main__':
             acc = accuracy_score(y_true, y_pred)
             f1 = f1_score(y_true, y_pred)
             res = (acc + f1) / 2
+            if res > best_res:
+                best_acc, best_f1 = acc, f1
             print(f'dev result: \n {classification_report(y_true, y_pred)}')
         
         elif config.dataset_name == "STS-B":
@@ -146,8 +154,8 @@ if __name__ == '__main__':
     elif config.dataset_name in ["RTE", "SST-2", "MNLI-m", "MNLI-mm", "QNLI", "WNLI"]:
         config.acc = best_res
     elif config.dataset_name in ["MRPC", "QQP"]:
-        config.acc = acc
-        config.f1 = f1
+        config.acc = best_acc
+        config.f1 = best_f1
     elif config.dataset_name == "STS-B":
         config.pearsonr = pearsonr_res[0]
         config.spearmanr = spearmanr_res[0]
@@ -156,8 +164,12 @@ if __name__ == '__main__':
     consumed_time = end_time - start_time
     config_dict = config.__dict__
     config_dict["consumed_time"] = consumed_time
-
-    with open(f"result/{config.dataset_name}/{config.method}_{str(round(best_res, 6))}.json", "w") as f:
-        json.dump(config_dict, f, ensure_ascii=False, indent=4)
-        print(f"save result to result/{config.dataset_name}/{config.method}_{str(round(best_res, 6))}.json")
+    if config.ablation == 1:
+        with open(f"ablation/{config.dataset_name}/{config.method}_{str(best_res)}.json", "w") as f:
+            json.dump(config_dict, f, ensure_ascii=False, indent=4)
+            print(f"save result to ablation/{config.dataset_name}/{config.method}_{str(best_res)}.json")
+    else:
+        with open(f"result/{config.dataset_name}/{config.method}_{str(round(best_res, 6))}.json", "w") as f:
+            json.dump(config_dict, f, ensure_ascii=False, indent=4)
+            print(f"save result to result/{config.dataset_name}/{config.method}_{str(round(best_res, 6))}.json")
     

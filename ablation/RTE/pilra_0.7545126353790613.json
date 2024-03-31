@@ -1,0 +1,32 @@
+{
+    "dataset_name": "RTE",
+    "task_type": "NLU",
+    "batch_size": 16,
+    "max_length": 256,
+    "num_tags": 2,
+    "model_name_or_path": "../pretrained_models/roberta",
+    "device": "cuda:0",
+    "lr": 0.0004,
+    "num_epochs": 10,
+    "weight_decay": 0.1,
+    "method": "pilra",
+    "dropout": 0.1,
+    "modules_to_apply": [
+        "query",
+        "key",
+        "value"
+    ],
+    "scaling_alpha": 1.0,
+    "scale": 1.0,
+    "do_test": 0,
+    "lora_r": 2,
+    "krona_dim": 12,
+    "krona_dropout": 0.1,
+    "k": 0.2,
+    "ablation": 1,
+    "residual_connection": false,
+    "num_trainable_params": 536066,
+    "trainable_ratio": 0.004282303312421917,
+    "acc": 0.7545126353790613,
+    "consumed_time": 191.02292704582214
+}

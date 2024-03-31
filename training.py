@@ -11,7 +11,9 @@ from customed_transformers import RobertaModel, RobertaConfig
 
 from preprocess import *
 from model import *
-from methods import *
+import modified_modules.krona_layer as krona
+import modified_modules.pilra_layer as pilra
+# from methods import *
 
 def get_optimizer(model, dataloader, config):
     
@@ -122,6 +124,8 @@ def get_customed_model(config):
             pass
         elif config.method == "lora" or config.method == "ilra" or config.method == "pa":
             lora.mark_only_lora_as_trainable(base_model)
+        elif config.method == "pilra":
+            pilra.mark_only_pilra_as_trainable(base_model)
         elif config.method == "bit_fit":
             # freeze all parameters except bias (LayerNorm.bias excluded)
             for n, p in base_model.named_parameters():

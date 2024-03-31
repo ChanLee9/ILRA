@@ -1,15 +1,16 @@
-DATASET_NAME=QNLI
+DATASET_NAME=CoLA
 TASK_TYPE=NLU
-BATCH_SIZE=16
-LR=1e-3
-MAX_LEN=256
-METHOD=ilra
+BATCH_SIZE=32
+LR=2e-3
+MAX_LEN=512
+METHOD=pilra
 LORA_R=2
 KRONA_DIM=12
-SCALING_ALPHA=3
-NUM_EPOCHS=3
-K=0.2
+SCALING_ALPHA=1
+NUM_EPOCHS=10
+K=1
 MODULES_TO_APPLY="query,value"
+ABLATION=1
 
 python main.py \
     --dataset_name $DATASET_NAME \
@@ -32,3 +33,4 @@ python main.py \
     --do_test 0 \
     --scale 1 \
     --k $K \
+    --ablation $ABLATION
